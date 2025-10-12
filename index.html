@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Área Mínima por Rigidez (Deflexión)</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Use the Inter font globally
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light Green background */
+        }
+        .input-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        .result-box {
+            /* Vibrant green/teal gradient */
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+        }
+        /* Styling for the range slider thumb */
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: grab;
+            transition: background 0.3s;
+            background: var(--tw-thumb-color, #059669); /* Green color */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
+    
+    <div class="w-full max-w-4xl bg-white p-6 md:p-10 rounded-2xl shadow-2xl space-y-8">
+        <h1 class="text-4xl font-extrabold text-teal-700 text-center border-b pb-3">
+            Diseño por Rigidez: Cálculo de Área Mínima ($$A_{\text{mín}}$$)
+        </h1>
+        <p class="text-center text-gray-600 mb-6">
+            Determina el área de sección transversal mínima para garantizar que el miembro no exceda la deflexión permitida.
+        </p>
+
+        <!-- Formula Explanation -->
+        <div class="bg-teal-50 p-4 rounded-xl border-l-4 border-teal-500">
+            <h2 class="text-xl font-semibold text-teal-800 mb-2">Fórmula Base (Deflexión Axial)</h2>
+            <div class="text-center text-gray-700 font-mono">
+                $$
+                A_{\text{mín}} = \frac{F \cdot L}{\delta_{\text{máx}} \cdot E}
+                $$
+            </div>
+            <p class="text-xs text-center text-gray-500 mt-2">
+                Usamos unidades consistentes: $F$ (N), $L$ (mm), $\delta_{\text{máx}}$ (mm), $E$ (MPa = N/mm²), lo que resulta en $A_{\text{mín}}$ (mm²).
+            </p>
+        </div>
+
+        <!-- Main Layout: Inputs (Left) and Results (Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Input Controls -->
+            <div class="space-y-6">
+                
+                <!-- Input Card: Applied Load (F) -->
+                <div class="input-card p-6 bg-white rounded-xl border-t-4 border-blue-500">
+                    <label for="loadF" class="block text-lg font-medium text-gray-800 mb-3">
+                        1. Carga Aplicada ($$F$$) (Newtons, N)
+                    </label>
+                    <input type="range" id="loadF" min="1000" max="70000" value="15000" step="100" class="w-full range-slider bg-blue-200">
+                    <div id="loadDisplay" class="text-right text-2xl font-mono text-blue-600 mt-2">15000 N</div>
+                </div>
+
+                <!-- Input Card: Modulus of Elasticity (E) - SELECCIÓN Y AJUSTE DE MATERIAL -->
+                <div class="input-card p-6 bg-white rounded-xl border-t-4 border-teal-500">
+                    <label for="materialSelect" class="block text-lg font-medium text-gray-800 mb-3">
+                        2. Módulo de Elasticidad ($$E$$) - Material
+                    </label>
+                    
+                    <!-- Dropdown para seleccionar el material base -->
+                    <select id="materialSelect" class="w-full p-3 border border-teal-300 rounded-lg text-lg focus:ring-teal-500 focus:border-teal-500 transition duration-150 mb-4">
+                        <!-- Opciones de materiales cargadas por JS -->
+                    </select>
+                    
+                    <label for="modulusInputRange" class="block text-base font-medium text-gray-700 mb-2">
+                        Ajuste Fino de $$E$$ (MPa)
+                    </label>
+                    <!-- Selector de rango para el ajuste fino de E -->
+                    <input type="range" id="modulusInputRange" min="100" max="250000" value="200000" step="100" class="w-full range-slider bg-teal-200">
+                    
+                    <div class="flex justify-between items-center mt-3">
+                        <p class="text-sm text-gray-500">Valor de $E$ utilizado:</p>
+                        <!-- Display para el valor de E final -->
+                        <div id="modulusDisplay" class="text-2xl font-mono text-teal-600 font-bold">200000 MPa</div>
+                    </div>
+                </div>
+                
+                <!-- Input Card: Member Length (L) -->
+                <div class="input-card p-6 bg-white rounded-xl border-t-4 border-orange-500">
+                    <label for="memberLength" class="block text-lg font-medium text-gray-800 mb-3">
+                        3. Longitud del Miembro ($$L$$) (Milímetros, mm)
+                    </label>
+                    <!-- Rango modificado a 0mm (0m) y 2000mm (2m) -->
+                    <input type="range" id="memberLength" min="0" max="2000" value="1500" step="50" class="w-full range-slider bg-orange-200">
+                    <div id="lengthDisplay" class="text-right text-2xl font-mono text-orange-600 mt-2">1500 mm</div>
+                    <p class="text-sm text-gray-400 mt-1">Rango de 0 m a 2.0 m</p>
+                </div>
+                
+                <!-- Input Card: Max Allowable Deflection (delta_max) -->
+                <div class="input-card p-6 bg-white rounded-xl border-t-4 border-red-500">
+                    <label for="maxDeflection" class="block text-lg font-medium text-gray-800 mb-3">
+                        4. Deflexión Máxima Permitida ($$\delta_{\text{máx}}$$ ) (mm)
+                    </label>
+                    <!-- Rango modificado a 0.1 mm a 2.0 mm -->
+                    <input type="range" id="maxDeflection" min="0.1" max="2.0" value="1.0" step="0.1" class="w-full range-slider bg-red-200">
+                    <div id="deflectionDisplay" class="text-right text-2xl font-mono text-red-600 mt-2">1.0 mm</div>
+                    <p class="text-sm text-gray-400 mt-1">Rango de 0 mm a 2.0 mm (Límites de servicio más estrictos).</p>
+                </div>
+
+            </div>
+
+            <!-- Calculated Metrics and Visualization -->
+            <div class="space-y-4">
+                
+                <!-- Result Box: Stiffness Product (E * delta_max) -->
+                <div class="p-6 bg-gray-100 rounded-xl shadow-inner flex-grow">
+                    <div class="text-sm font-semibold text-gray-500 mb-2">
+                        Rigidez Requerida ( $$ \delta_{\text{máx}} \cdot E $$ )
+                    </div>
+                    <div id="stiffnessProduct" class="text-4xl font-extrabold text-purple-700">0.00</div>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Producto de la rigidez intrínseca del material y la limitación de servicio.
+                    </p>
+                </div>
+                
+                <!-- Visualization Card -->
+                <div class="p-6 bg-white rounded-xl shadow-md border border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Visualización de Deflexión</h3>
+                    <div id="deflectionVisualization" class="flex flex-col items-center justify-center h-48 py-4">
+                        <div class="relative w-full max-w-xs h-24">
+                            <!-- Fixed top point -->
+                            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-800 rounded-full"></div>
+                            
+                            <!-- Member (Line) -->
+                            <svg id="memberSVG" viewBox="0 0 100 200" preserveAspectRatio="none" class="w-full h-full">
+                                <line x1="50" y1="0" x2="50" y2="150" stroke="#10b981" stroke-width="4" stroke-linecap="round" id="memberLine"/>
+                                <!-- Deflected point indicator (Circle) -->
+                                <circle cx="50" cy="150" r="4" fill="#ef4444" id="deflectedPoint"/>
+                            </svg>
+                            
+                            <!-- Arrow representing force F -->
+                            <div class="absolute top-1/2 left-0 transform -translate-y-1/2 flex items-center">
+                                <span class="text-lg font-bold text-blue-600">F</span>
+                                <svg width="20" height="20" viewBox="0 0 20 20" class="ml-1">
+                                    <line x1="0" y1="10" x2="15" y2="10" stroke="#3b82f6" stroke-width="2" />
+                                    <path d="M 15 10 L 10 5 L 10 15 Z" fill="#3b82f6" />
+                                </svg>
+                            </div>
+                            
+                            <!-- Annotation for Deflection -->
+                            <div class="absolute right-0 top-3/4 transform translate-x-1/2 -translate-y-1/2 text-xs font-semibold text-red-600">
+                                <span id="deflectionIndicator">0.0 mm</span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <p id="rigidityStatus" class="text-center text-sm font-semibold mt-2 transition-colors duration-300"></p>
+                </div>
+
+                <!-- Main Result Box: Minimum Area -->
+                <div class="result-box p-8 rounded-xl text-white flex-grow flex flex-col justify-center items-center text-center shadow-xl">
+                    <div class="text-xl font-semibold opacity-80 mb-2">
+                        Área Mínima Requerida ($$A_{\text{mín}}$$)
+                    </div>
+                    <div id="areaResult" class="text-7xl font-extrabold">0.00</div>
+                    <div class="text-2xl font-bold mt-2 opacity-90">
+                        $$
+                        \text{mm}^2
+                        $$
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // --- MATERIAL DATA (Modulus of Elasticity E in GPa) ---
+        // GPa is converted to MPa (N/mm^2) for calculation: E_MPa = E_GPa * 1000
+        const materials = [
+            { name: "Acero (Típico)", E_GPa: 200 },
+            { name: "Titanio Ti-6Al-4V", E_GPa: 116 },
+            { name: "Aleación de Aluminio 6061", E_GPa: 69 },
+            { name: "Vidrio Estructural", E_GPa: 70 },
+            { name: "Bronce", E_GPa: 100 },
+            { name: "Hormigón (Típico)", E_GPa: 30 },
+            { name: "Nylon 6/6 (Polímero)", E_GPa: 3 },
+            { name: "Madera (Típica)", E_GPa: 10 }
+        ];
+
+        // --- DOM Elements ---
+        const loadInput = document.getElementById('loadF');
+        const materialSelect = document.getElementById('materialSelect');
+        const modulusInputRange = document.getElementById('modulusInputRange'); 
+        const lengthInput = document.getElementById('memberLength');
+        const deflectionInput = document.getElementById('maxDeflection');
+
+        // Display references
+        const loadDisplay = document.getElementById('loadDisplay');
+        const modulusDisplay = document.getElementById('modulusDisplay');
+        const lengthDisplay = document.getElementById('lengthDisplay');
+        const deflectionDisplay = document.getElementById('deflectionDisplay');
+
+        const stiffnessProduct = document.getElementById('stiffnessProduct');
+        const areaResult = document.getElementById('areaResult');
+        
+        // Visualization Elements
+        const memberLine = document.getElementById('memberLine');
+        const deflectedPoint = document.getElementById('deflectedPoint');
+        const deflectionIndicator = document.getElementById('deflectionIndicator');
+        const rigidityStatus = document.getElementById('rigidityStatus');
+
+        // --- POPULATE FUNCTION ---
+        const populateMaterials = () => {
+            materials.forEach((mat, index) => {
+                const option = document.createElement('option');
+                // Usamos el valor de E_GPa como valor del <option>
+                option.value = mat.E_GPa;
+                option.textContent = `${mat.name} (E ≈ ${mat.E_GPa} GPa)`;
+                materialSelect.appendChild(option);
+
+                if (index === 0) {
+                    // Inicializar el slider con el valor en MPa del primer material
+                    modulusInputRange.value = mat.E_GPa * 1000;
+                    modulusInputRange.min = 1000; // Mínimo absoluto (1 GPa)
+                    modulusInputRange.max = 250000; // Máximo para Acero/Titanio (250 GPa)
+                    modulusInputRange.step = 100;
+                }
+            });
+        };
+
+        // --- CALCULATION FUNCTION ---
+        const calculateArea = () => {
+            // Get values from inputs
+            const F = parseFloat(loadInput.value);       // Load (N)
+            const L = parseFloat(lengthInput.value);     // Length (mm)
+            const deltaMax = parseFloat(deflectionInput.value); // Max Deflection (mm)
+            
+            // Get Modulus of Elasticity (E) in MPa (N/mm^2)
+            const E_MPa = parseFloat(modulusInputRange.value); 
+
+            // Validation 
+            if (isNaN(E_MPa) || E_MPa <= 0 || isNaN(deltaMax) || deltaMax <= 0) {
+                 modulusDisplay.textContent = "Error";
+                 stiffnessProduct.textContent = "N/A";
+                 areaResult.textContent = "N/A";
+                 rigidityStatus.textContent = "Asegúrate de tener valores positivos.";
+                 rigidityStatus.classList.add('text-red-600');
+                 return;
+            }
+
+            // --- 1. Calculate Required Minimum Area ---
+            // A_min = (F * L) / (delta_max * E)
+            const denominator = deltaMax * E_MPa;
+            const A_min = (F * L) / denominator; 
+
+            // --- 2. Calculate Intermediate Metric (Denominator) ---
+            const requiredStiffnessProduct = denominator;
+
+            // --- Update UI Displays ---
+            
+            loadDisplay.textContent = `${F.toFixed(0)} N`;
+            lengthDisplay.textContent = `${L.toFixed(0)} mm`;
+            deflectionDisplay.textContent = `${deltaMax.toFixed(1)} mm`;
+            modulusDisplay.textContent = `${E_MPa.toFixed(0)} MPa`; 
+            
+            stiffnessProduct.textContent = `${requiredStiffnessProduct.toFixed(2)}`;
+            areaResult.textContent = `${A_min.toFixed(2)}`;
+
+            // --- Style and Visualization Updates ---
+            
+            // Slider background gradients
+            const updateSliderStyle = (input, color1, color2) => {
+                const min = parseFloat(input.min);
+                const max = parseFloat(input.max);
+                const value = parseFloat(input.value);
+                input.style.setProperty('background', `linear-gradient(to right, ${color1} 0%, ${color1} ${((value - min) / (max - min)) * 100}%, ${color2} ${((value - min) / (max - min)) * 100}%, ${color2} 100%)`);
+            };
+
+            updateSliderStyle(loadInput, '#3b82f6', '#bfdbfe'); 
+            loadInput.style.setProperty('--tw-thumb-color', '#1d4ed8');
+            
+            updateSliderStyle(modulusInputRange, '#10b981', '#d1fae5');
+            modulusInputRange.style.setProperty('--tw-thumb-color', '#059669');
+
+            updateSliderStyle(lengthInput, '#f97316', '#fed7aa'); 
+            lengthInput.style.setProperty('--tw-thumb-color', '#ea580c');
+            
+            updateSliderStyle(deflectionInput, '#ef4444', '#fee2e2');
+            deflectionInput.style.setProperty('--tw-thumb-color', '#dc2626');
+
+
+            // Visualization: Deflection indicator is scaled based on L and deltaMax
+            // For visualization purposes, let's normalize deltaMax relative to L (e.g., L/360 is common)
+            const normalizedDeflection = deltaMax / L; // Ratio of delta/L
+            const visualDeflectionLimit = 1 / 200; // L/200 ratio as an arbitrary "bad" limit
+
+            // Map normalized deflection to a visual offset (y-coordinate of the point)
+            // The SVG line goes from y=0 to y=150. We want to offset the point along the x-axis to show deflection.
+            // Since this is axial deflection (straight line), we'll simulate a visual displacement based on the rigidity/area.
+            
+            // Let's use the stiffness product to color the bar (higher is better/stiffer)
+            // Normalized E (0 to 1) based on the full range (e.g., Nylon to Steel)
+            const E_min = 3000; 
+            const E_max = 250000;
+            const normalizedE = Math.min(1, Math.max(0, (E_MPa - E_min) / (E_max - E_min)));
+            const hue = normalizedE * 120; // 0 (Red/Soft) to 120 (Green/Stiff)
+            
+            // Set color (HSL: Hue, Saturation=80%, Lightness=50%)
+            memberLine.style.stroke = `hsl(${hue}, 80%, 50%)`;
+            
+            // Simple visual check: High Load / Low E = High A_min (less stiff design, likely failure)
+            const rigidityIndex = (E_MPa * deltaMax) / (F * L);
+            
+            // Map the rigidity index to a visual X displacement for the "deflectedPoint" (exaggerated)
+            // Higher A_min (lower rigidityIndex) means higher visual displacement
+            // We want A_min to map to displacement: 0.00 mm^2 (impossible) -> 0 displacement; 5000 mm^2 (huge) -> 0 displacement.
+            // Let's use a simpler check: is the area required extremely large?
+            
+            // A_min > 5000 mm^2 (50 cm^2) is visually "too big" or requires "too much area" for the limit
+            const maxVisualDisplacement = 40; // Max x-displacement in SVG
+            let visualDisplacement = 0;
+
+            if (A_min > 1000) {
+                 visualDisplacement = 5 + Math.min(maxVisualDisplacement, A_min / 50); // Exaggerated movement
+            }
+
+            // Update deflected point position (we are moving it from the center x=50 to the right)
+            deflectedPoint.setAttribute('cx', 50 + visualDisplacement);
+            deflectedPoint.setAttribute('cy', 150); // Keep it at the end of the line
+            memberLine.setAttribute('x2', 50 + visualDisplacement); // Line end follows the point
+
+            // Update indicator
+            deflectionIndicator.textContent = `A_min: ${A_min.toFixed(1)} mm²`;
+            
+            // Update status message
+            rigidityStatus.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600');
+
+            if (A_min > 2000) { 
+                rigidityStatus.textContent = `¡Área muy grande! Se necesita un material con mayor E.`;
+                rigidityStatus.classList.add('text-red-600');
+            } else if (A_min > 500) {
+                rigidityStatus.textContent = 'El diseño es factible, pero evalúa un material más rígido.';
+                rigidityStatus.classList.add('text-yellow-600');
+            } else { 
+                rigidityStatus.textContent = 'Área mínima eficiente y rigidez controlada.';
+                rigidityStatus.classList.add('text-green-600');
+            }
+        };
+
+        // --- HANDLER: Updates the slider when a new material is selected ---
+        const handleMaterialChange = () => {
+            // Value is in GPa, convert to MPa (x1000) for the slider
+            const selectedE_GPa = parseFloat(materialSelect.value);
+            const selectedE_MPa = selectedE_GPa * 1000; 
+            
+            // Set the slider value and recalculate
+            modulusInputRange.value = selectedE_MPa;
+            calculateArea();
+        };
+
+        // --- EVENT LISTENERS AND INITIALIZATION ---
+        loadInput.addEventListener('input', calculateArea);
+        lengthInput.addEventListener('input', calculateArea);
+        deflectionInput.addEventListener('input', calculateArea);
+        
+        materialSelect.addEventListener('change', handleMaterialChange); 
+        modulusInputRange.addEventListener('input', calculateArea);        
+
+        // Initial setup on load
+        window.onload = () => {
+             populateMaterials();
+             calculateArea();
+        };
+    </script>
+</body>
+</html>
