@@ -198,7 +198,7 @@
                     <div class="input-card p-6 bg-white rounded-xl border-t-4 border-pink-600">
                         <label for="deltaAbsInput" class="block text-lg font-bold text-gray-800 mb-3 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-pink-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                            Límite ΔL mínimo (ΔL_mín) (mm)
+                            Límite ΔL absoluto (ΔL) (mm)
                         </label>
                         
                         <div class="flex items-center space-x-2 mb-3">
@@ -222,7 +222,7 @@
                         </select>
                         
                         <label for="elasticityInputRange" class="block text-base font-medium text-gray-700 mb-2">
-                            Ajuste fino de E {GPa}
+                            Ajuste fino de E (GPa)
                         </label>
                         <input type="range" id="elasticityInputRange" min="1" max="300" value="200" step="0.5" class="w-full range-slider bg-teal-200" style="--tw-thumb-color: #14b8a6;">
                         
@@ -312,7 +312,7 @@
                 const option = document.createElement('option');
                 const E_scaled = mat.E / E_SCALING_FACTOR; // E in GPa for the slider value
                 option.value = E_scaled; 
-                option.textContent = `${mat.name} ($E$ ≈ ${formatNumberES(E_scaled, 0)} GPa)`;
+                option.textContent = `${mat.name} (E ≈ ${formatNumberES(E_scaled, 0)} GPa)`;
                 materialSelect.appendChild(option);
 
                 if (index === 0) {
@@ -481,6 +481,7 @@
     </script>
 </body>
 </html>
+
 
 
 
